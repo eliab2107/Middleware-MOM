@@ -12,12 +12,7 @@ class ServerHandler:
         self.invoker: Invoker = None
 
     def register_service(self, service: Any):
-        self.invoker = Invoker(service)
-        # register the invoker's handle coroutine as the queue handler
-        self.broker.register_handler(self.queue, self._handle)
+        ...
 
     async def _handle(self, message: Message) -> Message:
-        if not self.invoker:
-            # no service
-            return Message(type="response", payload={"error": "no service registered"}, correlation_id=message.correlation_id, reply_to=message.reply_to)
-        return await self.invoker.handle(message)
+        ...

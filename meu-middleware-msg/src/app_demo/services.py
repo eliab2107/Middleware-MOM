@@ -3,9 +3,17 @@ import asyncio
 
 
 class Calculator:
-    def add(self, a: int, b: int) -> int:
+    def add(self, a: float, b: float) -> float:
         return a + b
 
-    async def slow_multiply(self, a: int, b: int, delay: float = 0.5) -> int:
-        await asyncio.sleep(delay)
+
+    def sub(self, a: float, b: float) -> float:
+        return a - b
+
+    
+    def mult(self, a: float, b: float) -> float:
         return a * b
+
+
+    def div(self, a: float, b:float) -> float:
+        return a / b
