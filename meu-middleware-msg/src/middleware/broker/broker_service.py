@@ -7,6 +7,7 @@ from middleware.broker.queue_manager import QueueManager
 
 class BrokerService:
     def __init__(self):
+        self.queue_manager = QueueManager()
         ...
 
     def register_handler(self, queue_name: str, handler: Callable[[Message], asyncio.Future]):
