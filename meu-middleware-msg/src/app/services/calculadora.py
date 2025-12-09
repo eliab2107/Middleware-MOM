@@ -16,4 +16,6 @@ class Calculator:
 
 
     def div(self, a: float, b:float) -> float:
+        if b == 0:
+            raise ZeroDivisionError("Divisão por zero não permitida.")
         return a / b

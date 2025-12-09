@@ -12,7 +12,7 @@ async def main():
 
     # NOTE: For a proper demo, run app_server in a separate process that uses the same broker instance.
     # Here we simulate both in one process for convenience: register a simple service directly.
-    from app_demo.services import Calculator
+    from app.services.calculadora import Calculator
     from middleware.server.server_handler import ServerHandler
     srv = ServerHandler(broker, queue="requests")
     srv.register_service(Calculator())
