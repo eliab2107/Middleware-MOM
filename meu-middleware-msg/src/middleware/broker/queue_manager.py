@@ -4,7 +4,11 @@ import time
 from typing import Dict, List, Optional
 from middleware.protocol import Message
 
+#Precisa de uma thread que esteja o tempo inteiro retirando e enviando as mensagens das filas, deve ser executada uma para cada fila(Notification Consumer) 
+#Uma função para estar recebendo as mensagens e colocando na fila correta.
+#Ambas as funções devem ser executadas para cada fila criada.
 
+##Essas funções vão usar o invoker tanto para receber quanto para enviar as mensagens.
 class QueueManager:
     def __init__(self):
         """Init manager queues"""

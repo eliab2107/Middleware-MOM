@@ -1,54 +1,34 @@
-from typing import Any, Dict, Callable
-
+from network.server_request_handler import ServerRequestHandler
+from network.client_request_handler import ClientRequestHandler
+from utils.marshaller import Marshaller
+from broker.notification_engine import NotificationEngine
 class Invoker:
-    """
-    Recebe um payload de requisição e executa o método correspondente 
-    no serviço registrado.
-    """
-    
-    def __init__(self):
-        """Inicializa o registro de serviços vazios."""
-        self.services: Dict[str, Any] = {}
+    def __init__(self, marshaller: Marshaller, server_request_handler: ServerRequestHandler, notification_engine: NotificationEngine, client_request_handler:ClientRequestHandler):
+        self.srh = server_request_handler
+        self.marshaller = marshaller
+        self.notification_engine = notification_engine
+        self.clientRequestHandler = client_request_handler
 
-    def register_service(self, service_name: str, service_instance: Any):
-        """
-        Adiciona uma instância de serviço ao registro.
-        Ex: invoker.register_service('calculadora', Calculadora())
-        """
-        if service_name in self.services:
-            raise ValueError(f"Serviço '{service_name}' já está registrado.")
-            
-        self.services[service_name] = service_instance
+    def loop(self):
+        print("Invoker iniciado, aguardando mensagens...")
 
+        while True:
+            try:
+                raw_message = self.srh.receive()
+                message = self.marshaller.unmarshal(raw_message)
 
-    def invoke(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Executa o método solicitado pelo payload e retorna o resultado.
-        """
-        service_name = payload.get("service")
-        method_name = payload.get("method")
-        args = payload.get("args", [])
-        kwargs = payload.get("kwargs", {})
+                # PROCESSAMENTO REAL
+                result = self.process_message(message)
+
+                # Envio ACK/NACK
+                response = self.marshaller.marshal(result)
+                self.srh.send(response)
+
+            except ConnectionError:
+                print("Cliente desconectou.")
+                break
+
+    def process_message(self, msg: dict) -> dict:
+        print("Mensagem recebida:", msg)
+        return {"status": "ack"}
         
-        service_instance = self.services.get(service_name)
-        
-        if not service_instance:
-            return {"status": 404, "error": f"Serviço '{service_name}' não registrado."}
-
-        if not hasattr(service_instance, method_name):
-            return {"status": 404, "error": f"Método '{method_name}' não encontrado no serviço '{service_name}'."}
-
-        method_callable: Callable = getattr(service_instance, method_name)
-        
-        try:
-            result = method_callable(*args, **kwargs)
-            
-            return {
-                "status": 200, 
-                "result": result,
-                "correlation_id": payload.get("correlation_id") 
-            }
-        except TypeError:
-            return {"status": 400, "error": "Argumentos incorretos para o método."}
-        except Exception as e:
-            return {"status": 500, "error": "Erro interno do serviço.", "details": str(e)}
