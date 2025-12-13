@@ -1,22 +1,16 @@
 """Demo server: creates broker, registers Calculator service and starts listening."""
 import asyncio
-from middleware.broker.broker_service import BrokerService
-from middleware.broker.connection import BrokerConnection
-from middleware.server.server_handler import ServerHandler
-from app_demo.services import Calculator
+from middleware.subscriber.subscriber import Subscriber
+from middleware.client.proxy import ClientProxy
 
+
+def task(message):
+    print("Task received:", message)
 
 async def main():
-    broker = BrokerService()
-    conn = BrokerConnection(broker)
-    srv = ServerHandler(broker, queue="requests")
-    srv.register_service(Calculator())
-
-    print("Server started. Broker running in-process. Waiting for requests...")
-    # keep running
-    while True:
-        await asyncio.sleep(1)
-
-
+    client_proxy = ClientProxy()
+    subscriber = Subscriber(client_proxy, "localhost", 9002, "localhost", 5001, task)
+    subscriber.subscribe("news")
+    
 if __name__ == "__main__":
     asyncio.run(main())

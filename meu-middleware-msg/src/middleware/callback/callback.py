@@ -1,29 +1,46 @@
 from middleware.utils.marshaller import Marshaller
 from middleware.network.server_request_handler import ServerRequestHandler
+from typing import Callable
 
 class Callback:
-    def __init__(self, func):
+    def __init__(self, func:Callable, my_host:str="localhost", my_port:int=8000):
+        if not callable(func):
+            raise TypeError("func deve ser uma callable")
         self.func = func
         self.marshaller = Marshaller()
-        self.srh = ServerRequestHandler('localhost', 8000)
+        self.srh = ServerRequestHandler(my_host, my_port)
     
-    def execute(self):
+    async def run(self):
         print("Callback iniciado, aguardando mensagens...")
 
         while True:
             try:
                 raw_message = self.srh.receive()
-                message = self.marshaller.unmarshal(raw_message)
+                if not raw_message:
+                    continue
 
-                print("Mensagem recebida no Callback:", message)
+                try:
+                    message = self.marshaller.unmarshal(raw_message)
+                except Exception as e:
+                    try:
+                        self.srh.send(self.marshaller.marshal({"error": "invalid_payload", "detail": str(e)}))
+                    except Exception:
+                        pass
+                    continue
 
-                # Executa a função de callback
-                result = self.func(message)
+                
+                try:
+                    result = self.func(message)
+                except Exception as e:
+                    result = {"error": "handler_error", "detail": str(e)}
 
-                # Envio ACK/NACK
-                response = self.marshaller.marshal(result)
-                self.srh.send(response)
-
+                try:
+                    response = self.marshaller.marshal(result)
+                    self.srh.send(response)
+                except Exception:
+                    raise Exception("Erro ao enviar resposta do callback")
             except ConnectionError:
-                print("Cliente desconectou.")
-                break
+                raise ConnectionError("Conexão encerrada pelo cliente")
+            except Exception:
+                raise  Exception("Erro desconhecido no callback")
+    

@@ -33,8 +33,9 @@ class Requestor:
     
     def subscribe(self, queue):
         envelope = {
-            "operation": "subscribe",
-            "queue": queue
+            "service": "notification_engine",
+            "method": "subscribe",
+            "topic": queue
         }
 
         return self.handler(envelope)

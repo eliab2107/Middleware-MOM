@@ -9,12 +9,10 @@ class SubscriptionManager:
         with self.lock:
             self.subscribers[topic].append(subscriber)
 
-    def remove_subscriber(self, topic, subscriber_id):
+    def remove_subscriber(self, topic, subscriber):
         with self.lock:
-            if topic in self.subscribers:
-                self.subscribers[topic] = [
-                    s for s in self.subscribers[topic] if s.id != subscriber_id
-                ]
+            if topic in self.subscribers and subscriber in self.subscribers[topic]:
+                self.subscribers[topic].remove(subscriber)
 
     def get_subscribers(self, topic):
         with self.lock:

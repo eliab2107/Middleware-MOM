@@ -8,7 +8,7 @@ class Invoker:
     def __init__(self, marshaller: Marshaller, server_request_handler: ServerRequestHandler, client_request_handler:ClientRequestHandler):
         self.srh = server_request_handler
         self.marshaller = marshaller
-        self.clientRequestHandler = client_request_handler
+        self.crh = client_request_handler
         self.services: Dict[str, Any] = {}
 
     def register_service(self, service_name: str, service_instance: Any):
@@ -30,15 +30,15 @@ class Invoker:
         message = Message(message)
         service_name = message.service
         method_name = message.method
+        
         if not service_name or not method_name:
              return {"status": 400, "error": "Payload inválido: 'service' e 'method' são obrigatórios."}
-        
+      
         service_instance = self.services.get(service_name)
         
         if service_instance is None:
             return {"status": 404, "error": f"Serviço '{service_name}' não registrado no Invoker."}
 
-      
         method_callable = getattr(service_instance, method_name, None)
         if method_callable is None or not callable(method_callable):
             return {"status": 404, "error": f"Método '{method_name}' não é chamável no serviço '{service_name}'."}

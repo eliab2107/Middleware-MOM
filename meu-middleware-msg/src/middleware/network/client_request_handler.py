@@ -7,7 +7,11 @@ class ClientRequestHandler:
         self.host = host
         self.port = port
 
-    def connect(self):
+    def connect(self, host=None, port=None):
+        if host:
+            self.host = host
+        if port:
+            self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 

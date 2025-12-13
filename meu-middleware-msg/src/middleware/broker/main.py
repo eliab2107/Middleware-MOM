@@ -7,24 +7,24 @@ from network.server_request_handler import ServerRequestHandler
 from network.client_request_handler import ClientRequestHandler
 from invoker.invoker import Invoker 
 from utils.marshaller import Marshaller
-
+import asyncio
 def main():
     marshaller = Marshaller()
     server_request_handler = ServerRequestHandler("localhost", 5001)
     client_request_handler = ClientRequestHandler()
     queue_manager = QueueManager()
-    subscription_manager = SubscriptionManager()
-        
-    notification_consumer = NotificationConsumer(subscription_manager)
-    notification_engine = NotificationEngine(queue_manager, notification_consumer, subscription_manager)
 
-    
 
     invoker = Invoker(
         marshaller,
         server_request_handler,
         client_request_handler
     )
+    subscription_manager = SubscriptionManager()
+        
+    notification_consumer = NotificationConsumer(subscription_manager, invoker)
+    notification_engine = NotificationEngine(queue_manager, notification_consumer, subscription_manager)
+
     
     invoker.register_service("notification_engine", notification_engine)
     invoker.loop()

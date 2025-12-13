@@ -9,18 +9,25 @@ class NotificationEngine:
         self.consumer = consumer
         self.sub_manager = sub_manager
         self.global_lock = asyncio.Lock()
+        
     
-    async def publish(self, message: Message) -> None:
-        await self.storage.enqueue(message.topic, message)
-        return {"status": "ack"}
+    def publish(self, args) -> None:
+        topic = args[0]
+        message = Message(args[1])
+        print("PUBLISHING MESSAGE", message)
+        print("QUEUES: ", self.storage.get_queues())
+        print("SUBSCRIBERS: ", self.sub_manager.subscribers )
+        self.storage.enqueue(topic, message)
+       
     
     
-    async def susbcribe(self, topic: str, endpoint:tuple[str, int]) -> None:
+    def subscribe(self, topic: str, endpoint):
+        print("SUBSCRIBING TO TOPIC", topic, "AT ENDPOINT", endpoint)
         with self.global_lock:
-            self.storage.get_queues()  # Ensure the topic exists
+            self.storage.get_queues()  
             if topic not in  self.storage.get_queues() :
                 self.storage.create_queue(topic)
-            await self.sub_manager.add_subscriber(topic, endpoint)
+                self.sub_manager.add_subscriber(topic, endpoint)
         
     
     async def unsubscribe(self, topic: str, subscriber:tuple[str, int]) -> None:
@@ -31,34 +38,12 @@ class NotificationEngine:
         self.storage.create_queue(queue)
     
     
-    def start_consumer(self) -> None:
-        if self._consumer_thread and self._consumer_thread.is_alive():
-            return
+    async def consume(self, queue) -> None:
+        await self.consumer.start_consuming()
+    
+    
+    async def start_consumer(self) -> None:
+        asyncio.create_task(self.consumer.run(self.storage))
 
-        def _thread_target():
-            loop = asyncio.new_event_loop()
-            self._consumer_loop = loop
-            asyncio.set_event_loop(loop)
-            try:
-                # schedule consumer.run() and keep loop running
-                coro = getattr(self.consumer, "run", None)
-                if coro is None:
-                    return
-                task = loop.create_task(coro())
-                loop.run_forever()
-                # when stopped, cancel pending tasks
-                pending = asyncio.all_tasks(loop)
-                for p in pending:
-                    p.cancel()
-                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-            finally:
-                try:
-                    loop.close()
-                except Exception:
-                    pass
-
-        t = threading.Thread(target=_thread_target, daemon=True)
-        t.start()
-        self._consumer_thread = t
-
+       
     

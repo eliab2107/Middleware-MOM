@@ -26,7 +26,6 @@ class ClientProxy:
     def subscribe(self, queue: str):
         return self.requestor.subscribe(queue)
 
-
     def unsubscribe(self, queue: str):
         return self.requestor.unsubscribe(queue)
 
