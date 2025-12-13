@@ -31,11 +31,8 @@ class ServerRequestHandler:
 
     def recv_exact(self, n):
         data = b""
-        print(f"Aguardando {n} bytes de dados...")
         while len(data) < n:
-            print(f"Faltam {n - len(data)} bytes...")
             chunk = self.conn.recv(n - len(data))
-            print(f"CHUNK: Recebidos {len(chunk)} bytes de dados...")
             if not chunk:
                 raise ConnectionError("Conexão encerrada")
             data += chunk

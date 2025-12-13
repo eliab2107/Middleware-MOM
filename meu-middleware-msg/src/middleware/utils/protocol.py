@@ -4,43 +4,30 @@ from typing import Any, Dict, List, Optional
 import time
 import uuid
 
-
 @dataclass
 class Message:
-    msg_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    type: str = "request"  # or 'response'
-    method: str = ""
-    args: List[Any] = field(default_factory=list)
-    kwargs: Dict[str, Any] = field(default_factory=dict)
-    reply_to: Optional[str] = None
-    correlation_id: Optional[str] = None
-    ttl_ms: int = 0
-    created_at: float = field(default_factory=lambda: time.time())
-    payload: Any = None
-    sended: bool = False
+    def __init__(self, data: Dict[str, Any] = None):
+        self.msg_id = field(default_factory=lambda: str(uuid.uuid4()))
+        self.topic: str = data.get("topic") if data else ""
+        self.type: str = data.get("type", "publication") if data else "publication"
+        self.method: str = data.get("method", "publish") if data else "publish"
+        self.service: str = data.get("service", "notification_engine") if data else "notification_engine"
+        self.args: List[Any] = data.get("args", []) if data else []
+        self.kwargs: Dict[str, Any] = data.get("kwargs", {}) if data else {}
+        self.reply_to: Optional[str] = data.get("reply_to") if data else None
+        self.correlation_id: Optional[str] = data.get("correlation_id") if data else None
+        self.ttl_ms: int = int(data.get("ttl_ms", 0) or 0) if data else 0
+        self.created_at: float = field(default_factory=lambda: time.time())
+        self.payload: Any = data.get("payload") if data else None
+        self.sended: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
         return d
 
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Message":
-        return cls(
-            msg_id=data.get("msg_id") or str(uuid.uuid4()),
-            type=data.get("type", "request"),
-            method=data.get("method", ""),
-            args=data.get("args", []),
-            kwargs=data.get("kwargs", {}),
-            reply_to=data.get("reply_to"),
-            correlation_id=data.get("correlation_id"),
-            ttl_ms=int(data.get("ttl_ms", 0) or 0),
-            created_at=float(data.get("created_at", time.time())),
-            payload=data.get("payload"),
-        )
-
     @property
     def expires_at(self) -> Optional[float]:
-        if not self.ttl_ms:
+        if self.ttl_ms != 0:
             return None
         return self.created_at + (self.ttl_ms / 1000.0)
 

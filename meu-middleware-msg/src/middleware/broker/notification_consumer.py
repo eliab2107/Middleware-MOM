@@ -9,9 +9,6 @@ class NotificationConsumer(threading.Thread):
 
     def run(self):
         while True:
-            event = self.engine.queue.get()
-            topic = event["topic"]
-            subscribers = self.sub_manager.get_subscribers(topic)
-
-            for s in subscribers:
-                self.invoker.send_notification(s.endpoint, event["data"])
+            # Aqui você implementaria a lógica para consumir mensagens
+            # e enviar notificações aos subscribers usando o invoker.
+            pass

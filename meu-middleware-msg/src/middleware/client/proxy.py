@@ -1,6 +1,6 @@
 from middleware.requestor.requestor import Requestor
 from middleware.callback.callback import Callback
-
+from middleware.protocol import Message
 class ClientProxy:
     def __init__(self):
         self.requestor = Requestor()
@@ -16,18 +16,10 @@ class ClientProxy:
         self.requestor.connect(host, port)
         
 
-    def publish(self, topic: str,  payload: str = "hello world", reply_to: str = None,ttl_ms: int = 0, type:str="send", args: list=[], kwargs:dict={}):
-        
-        message = {
-            "topic": topic,
-            "ttl_ms": ttl_ms,
-            "payload": payload,
-            "reply_to": reply_to,
-            "type": type,
-            "args": list(args) if args is not None else [],
-            "kwargs": dict(kwargs) if kwargs is not None else {},
-        }
-
+    def publish(self, topic: str,  payload: str = "hello world", reply_to: str = "",ttl_ms: int = 0, type:str="send", args: list=[], kwargs:dict={}):
+        if not topic:
+            raise ValueError("Precisa informar um tópico para poder publicar.")
+        message = {"topic": topic, "payload": payload, "reply_to": reply_to, "ttl_ms": ttl_ms, "type": type, "args": args}
         resp = self.requestor.publish(topic, message)
         print(f"Publish response: {resp}")
 

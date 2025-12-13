@@ -2,7 +2,7 @@
 import asyncio
 import time
 from typing import Dict, List, Optional
-from middleware.protocol import Message
+from utils.protocol import Message
 
 #Precisa de uma thread que esteja o tempo inteiro retirando e enviando as mensagens das filas, deve ser executada uma para cada fila(Notification Consumer) 
 #Uma função para estar recebendo as mensagens e colocando na fila correta.
@@ -49,3 +49,24 @@ class QueueManager:
                 return queue.pop(0) #Aqui a gente ta apagando a mensagem da fila antes de receber um ack.
             return None
     
+    def get_queues(self) -> List[str]:
+        """Return the list of existing topics/queues."""
+        return list(self.queues.keys())
+    
+    
+    def create_queue(self, queue: str) -> None:
+        """Create a new queue."""
+        asyncio.run(self.ensure(queue))
+    
+    async def delete_expired_messages(self, queue: str) -> None:
+        """Remove expired messages from the specified queue."""
+        if queue not in self.queues:
+            return
+        with self.locks[queue]:
+            messages_to_delete = []
+            for message in self.queues[queue]:
+                if message.is_expired():
+                    messages_to_delete.append(message)
+                    
+            for message in messages_to_delete:
+                self.queues[queue].remove(message)

@@ -18,9 +18,14 @@ class Requestor:
 
     def publish(self, topic, message):
         envelope = {
-            "operation": "publish",
+            "service": "notification_engine",
+            "method": "publish",
             "topic": topic,
-            "payload": message
+            "payload":"Hello subscriber",
+            "reply_to":"",
+            "ttl_ms":0,
+            "type":"send",
+            "args":[topic, message]
         }
 
         return self.handler(envelope)
