@@ -1,6 +1,6 @@
 """Queue manager with TTL support."""
 import asyncio
-import time
+from threading import Lock
 from typing import Dict, List, Optional
 from utils.protocol import Message
 
@@ -14,32 +14,40 @@ class QueueManager:
         """Init manager queues"""
         # queue_name -> list of Message
         self.queues: Dict[str, List[Message]] = {}
-        self.locks: Dict[str, asyncio.Lock] = {}
+        self.locks: Dict[str, Lock] = {}
         self.global_lock = asyncio.Lock()
 
 
-    async def ensure(self, name: str) -> None:
+    def ensure(self, name: str) -> None:
         """Create/declare a new exchange or topic"""
         if name in self.queues:
+            print("haha")
             return
-        async with self.global_lock:
-            if name in self.queues:
-                return
+        else:
+            self.locks[name] = Lock()
+            self.locks[name].acquire()
             self.queues[name] = []
-            self.locks[name] = asyncio.Lock()
+            self.locks[name].release()
+        print("self.queues:", self.queues)
+        print("queue created:", name, " : ", self.queues[name])
+            
         
             
-    async def enqueue(self, name: str, message: Message) -> None:
+    def enqueue(self, name: str, message: Message) -> None:
         """Add a new message in the queue"""
-        await self.ensure(name)
-        async with self.locks[name]:
+        print("enqueueing message to", name, ":", message.payload)
+        self.ensure(name)
+        print("Current queue state:", self.queues[name])
+        print("Acquiring lock for", self.locks[name])
+        with self.locks[name]:
             self.queues[name].append(message)
+            print(self.queues[name])
     
 
-    async def dequeue(self, name: str) -> Optional[Message]:
+    def dequeue(self, name: str) -> Optional[Message]:
         """Return the oldest non-expired message, or None if none available."""
-        await self.ensure(name)
-        async with self.locks[name]:
+        self.ensure(name)
+        with self.locks[name]:
             queue = self.queues[name]
             while queue:
                 message = queue[0]
@@ -56,9 +64,9 @@ class QueueManager:
     
     def create_queue(self, queue: str) -> None:
         """Create a new queue."""
-        asyncio.run(self.ensure(queue))
+        self.ensure(queue)
     
-    async def delete_expired_messages(self, queue: str) -> None:
+    def delete_expired_messages(self, queue: str) -> None:
         """Remove expired messages from the specified queue."""
         if queue not in self.queues:
             return

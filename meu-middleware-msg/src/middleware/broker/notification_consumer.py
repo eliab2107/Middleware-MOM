@@ -18,7 +18,7 @@ class NotificationConsumer(threading.Thread):
             self.invoker.crh.send_notification(topic)
             
             
-    async def run(self, queue_manager:QueueManager):
+    def run(self, queue_manager:QueueManager):
         while True:
             print("CONSUMER RUNNING")
             for topic in queue_manager.get_queues():

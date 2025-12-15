@@ -14,10 +14,10 @@ class NotificationEngine:
     def publish(self, args) -> None:
         topic = args[0]
         message = Message(args[1])
-        print("PUBLISHING MESSAGE", message)
+        self.storage.enqueue(topic, message)
+        print("PUBLISHING MESSAGE", args[1], "TO TOPIC", topic)
         print("QUEUES: ", self.storage.get_queues())
         print("SUBSCRIBERS: ", self.sub_manager.subscribers )
-        self.storage.enqueue(topic, message)
        
     
     
@@ -30,19 +30,19 @@ class NotificationEngine:
                 self.sub_manager.add_subscriber(topic, endpoint)
         
     
-    async def unsubscribe(self, topic: str, subscriber:tuple[str, int]) -> None:
+    def unsubscribe(self, topic: str, subscriber:tuple[str, int]) -> None:
         self.sub_manager.remove_subscriber(topic, subscriber)
     
     
-    async def create_queue(self, queue: str) -> None:
+    def create_queue(self, queue: str) -> None:
         self.storage.create_queue(queue)
     
     
-    async def consume(self, queue) -> None:
-        await self.consumer.start_consuming()
+    def consume(self, queue) -> None:
+        self.consumer.start_consuming()
     
     
-    async def start_consumer(self) -> None:
+    def start_consumer(self) -> None:
         asyncio.create_task(self.consumer.run(self.storage))
 
        
