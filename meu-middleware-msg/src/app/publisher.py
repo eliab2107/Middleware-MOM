@@ -5,7 +5,7 @@ from middleware.client.proxy import ClientProxy
 async def main():
     client = ClientProxy()
     client.connect("localhost", 5001)
-    client.publish(topic="news", payload="Hello subscriber")
+    client.publish(topic="news", payload="Hello subscribers")
 
 
 if __name__ == "__main__":

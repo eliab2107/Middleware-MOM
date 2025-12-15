@@ -11,23 +11,20 @@ class NotificationEngine:
         self.global_lock = asyncio.Lock()
         
     
-    def publish(self, args) -> None:
+    async def publish(self, args) -> None:
         topic = args[0]
         message = Message(args[1])
-        self.storage.enqueue(topic, message)
-        print("PUBLISHING MESSAGE", args[1], "TO TOPIC", topic)
-        print("QUEUES: ", self.storage.get_queues())
-        print("SUBSCRIBERS: ", self.sub_manager.subscribers )
-       
+        await self.storage.enqueue(topic, message)    
+        
     
-    
-    def subscribe(self, topic: str, endpoint):
-        print("SUBSCRIBING TO TOPIC", topic, "AT ENDPOINT", endpoint)
-        with self.global_lock:
-            self.storage.get_queues()  
+    async def subscribe(self, args) -> None:
+        topic = args[0]
+        connection = args[len(args)-1]
+        with self.global_lock:  
             if topic not in  self.storage.get_queues() :
                 self.storage.create_queue(topic)
-                self.sub_manager.add_subscriber(topic, endpoint)
+            
+            self.sub_manager.add_subscriber(topic, connection)
         
     
     def unsubscribe(self, topic: str, subscriber:tuple[str, int]) -> None:

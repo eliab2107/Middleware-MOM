@@ -8,7 +8,8 @@ from network.client_request_handler import ClientRequestHandler
 from invoker.invoker import Invoker 
 from utils.marshaller import Marshaller
 import asyncio
-def main():
+
+async def main():
     marshaller = Marshaller()
     server_request_handler = ServerRequestHandler("localhost", 5001)
     client_request_handler = ClientRequestHandler()
@@ -25,11 +26,18 @@ def main():
     notification_consumer = NotificationConsumer(subscription_manager, invoker)
     notification_engine = NotificationEngine(queue_manager, notification_consumer, subscription_manager)
 
-    
     invoker.register_service("notification_engine", notification_engine)
-    invoker.loop()
+    
+    srh = ServerRequestHandler(
+        host="localhost",
+        port=5001,
+        callback=invoker.invoke   
+    )
+
+    print("Broker iniciado na porta 5001")
+
+    await srh.start()  
 
 
-#A solução para os modulos nao encontrados foi utilizar python -m e o nome da classe que se quer executar
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
