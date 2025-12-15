@@ -1,6 +1,6 @@
 import socket
 import struct
-
+import asyncio
 
 class ClientRequestHandler:
     def __init__(self, host="localhost", port=5000):
@@ -47,3 +47,19 @@ class ClientRequestHandler:
                 raise ConnectionError("Conexão encerrada pelo servidor")
             data += chunk
         return data
+
+    
+    async def send_receive_to_subscribe(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, payload: bytes) -> bytes:        
+        size = struct.pack("!I", len(payload))
+        writer.write(size + payload)
+        await writer.drain()
+
+        try:
+            ack_size_raw = await reader.readexactly(4)
+            ack_size = struct.unpack("!I", ack_size_raw)[0]
+
+            ack_payload = await reader.readexactly(ack_size)
+            return ack_payload
+
+        except asyncio.IncompleteReadError:
+            raise ConnectionError("Conexão encerrada antes do ACK")

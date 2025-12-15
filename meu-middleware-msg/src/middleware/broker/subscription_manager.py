@@ -1,20 +1,37 @@
 import asyncio
+from typing import Dict, List, Any
+
+
 class SubscriptionManager:
-    #Cada subscriber representa o endpoint para onde as notificacoes serao enviadas
     def __init__(self):
-        self.subscribers = {}  # topic -> list[Subscriber]
-        self.lock = asyncio.Lock()
+        self.subscribers: Dict[str, List[Any]] = {}
+        self.locks: Dict[str, asyncio.Lock] = {}
+        self.global_lock = asyncio.Lock()
+
         
-    def add_subscriber(self, topic, subscriber):
-        with self.lock:
+    async def ensure(self, topic):
+        if topic in self.subscribers: 
+            return
+        async with self.global_lock: 
+            if topic in self.subscribers:
+                return
+            self.subscribers[topic] = []
+            self.locks[topic]       = asyncio.Lock()
+        
+        
+    async def add_subscriber(self, topic, subscriber):
+        await self.ensure(topic)
+        async with self.locks[topic]:
             self.subscribers[topic].append(subscriber)
 
-    def remove_subscriber(self, topic, subscriber):
-        with self.lock:
+    async def remove_subscriber(self, topic, subscriber):
+        await self.ensure(topic)
+        async with self.locks[topic]:
             if topic in self.subscribers and subscriber in self.subscribers[topic]:
                 self.subscribers[topic].remove(subscriber)
 
     def get_subscribers(self, topic):
-        with self.lock:
-            subscribers = self.subscribers.get(topic, [])
-            return subscribers
+        if topic not in list(self.subscribers.keys()):
+            return []
+        subscribers = self.subscribers[topic]   
+        return subscribers

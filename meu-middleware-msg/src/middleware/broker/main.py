@@ -25,6 +25,7 @@ async def main():
         
     notification_consumer = NotificationConsumer(subscription_manager, invoker)
     notification_engine = NotificationEngine(queue_manager, notification_consumer, subscription_manager)
+    
 
     invoker.register_service("notification_engine", notification_engine)
     
@@ -35,9 +36,10 @@ async def main():
     )
 
     print("Broker iniciado na porta 5001")
+    asyncio.create_task(notification_engine.start_consumer())
 
-    await srh.start()  
-
+    await srh.start()
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

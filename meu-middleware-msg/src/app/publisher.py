@@ -6,7 +6,7 @@ async def main():
     client = ClientProxy()
     client.connect("localhost", 5001)
     client.publish(topic="news", payload="Hello subscribers")
-
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

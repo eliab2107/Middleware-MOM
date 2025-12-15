@@ -17,7 +17,7 @@ class Message:
         self.reply_to: Optional[str] = data.get("reply_to") if data else None
         self.correlation_id: Optional[str] = data.get("correlation_id") if data else None
         self.ttl_ms: int = int(data.get("ttl_ms", 0) or 0) if data else 0
-        self.created_at: float = field(default_factory=lambda: time.time())
+        self.created_at: float = time.time()
         self.payload: Any = data.get("payload") if data else None
         self.sended: bool = False
 

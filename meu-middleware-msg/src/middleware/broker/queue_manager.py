@@ -4,11 +4,6 @@ from threading import Lock
 from typing import Dict, List, Optional
 from utils.protocol import Message
 
-#Precisa de uma thread que esteja o tempo inteiro retirando e enviando as mensagens das filas, deve ser executada uma para cada fila(Notification Consumer) 
-#Uma função para estar recebendo as mensagens e colocando na fila correta.
-#Ambas as funções devem ser executadas para cada fila criada.
-
-##Essas funções vão usar o invoker tanto para receber quanto para enviar as mensagens.
 class QueueManager:
     def __init__(self):
         """Init manager queues"""
@@ -33,12 +28,12 @@ class QueueManager:
         """Add a new message in the queue"""
         await self.ensure(name)
         async with self.locks[name]:
+            print(message)
             self.queues[name].append(message)
     
 
     async def dequeue(self, name: str) -> Optional[Message]:
         """Return the oldest non-expired message, or None if none available."""
-        await self.ensure(name)
         async with self.locks[name]:
             queue = self.queues[name]
             while queue:
@@ -46,17 +41,14 @@ class QueueManager:
                 if message.is_expired():
                     queue.pop(0)
                     continue
-                return queue.pop(0) #Aqui a gente ta apagando a mensagem da fila antes de receber um ack.
+                return queue.pop(0) 
             return None
+    
     
     def get_queues(self) -> List[str]:
         """Return the list of existing topics/queues."""
         return list(self.queues.keys())
     
-    
-    def create_queue(self, queue: str) -> None:
-        """Create a new queue."""
-        asyncio.run(self.ensure(queue))
     
     async def delete_expired_messages(self, queue: str) -> None:
         """Remove expired messages from the specified queue."""

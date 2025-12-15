@@ -10,7 +10,9 @@ def task(message):
 async def main():
     client_proxy = ClientProxy()
     subscriber = Subscriber(client_proxy, "localhost", 9002, "localhost", 5001, task)
+    
     subscriber.subscribe("news")
+    await subscriber.start_server()
     
 if __name__ == "__main__":
     asyncio.run(main())

@@ -8,7 +8,7 @@ class Callback:
             raise TypeError("func deve ser uma callable")
         self.func = func
         self.marshaller = Marshaller()
-        self.srh = ServerRequestHandler(my_host, my_port)
+        self.srh = ServerRequestHandler(my_host, my_port, func)
     
     async def run(self):
         print("Callback iniciado, aguardando mensagens...")

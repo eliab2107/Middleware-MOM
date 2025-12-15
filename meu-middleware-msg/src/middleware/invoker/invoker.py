@@ -108,3 +108,9 @@ class Invoker:
             self.srh.close()
             return {"status": "ack"}
         
+    
+    async def send_to_subscriber(self, connection, message):
+        print(message)
+        message_unmarshaller = self.marshaller.marshall(message)
+        await self.crh.send_receive_to_subscribe(connection[0], connection[1], message_unmarshaller)
+        

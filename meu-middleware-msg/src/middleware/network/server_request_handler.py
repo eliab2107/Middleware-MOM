@@ -57,12 +57,10 @@ class ServerRequestHandler:
         return payload
 
 
-    async def send(self, payload: bytes, writer):
+    async def send(self, payload: bytes, writer:asyncio.StreamWriter):
         """Envia mensagem usando o mesmo socket persistente."""
         size = struct.pack("!I", len(payload))
-        writer.write(size)
-        print("PAYLOAF: ", payload)
-        writer.write(payload)
+        writer.write(size + payload)
         await writer.drain()
 
     def recv_exact(self, n):
