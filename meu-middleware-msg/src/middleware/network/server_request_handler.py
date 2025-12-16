@@ -1,6 +1,4 @@
 import struct
-import socket
-#O server request handler precisa aceitar as conexoes, receber suas mensagens e envia-las para o invoker que saberá o que fazer com elas.
 from typing import Callable, Awaitable, Dict, Any
 import asyncio
 class ServerRequestHandler:
@@ -13,13 +11,10 @@ class ServerRequestHandler:
         self.host = host
         self.port = port
         self.callback = callback
-        #self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.sock.bind((self.host, self.port))
-        #self.sock.listen()  # Escuta por conexões
-    
-    async def start(self):
+      
+    async def start(self, handle:Callable):
         server = await asyncio.start_server(
-            self.handle,
+            handle,
             self.host,
             self.port
         )
@@ -29,11 +24,10 @@ class ServerRequestHandler:
     
     async def handle(self, reader, writer):
         connection = (reader, writer)
-
         try:
             while True:
+                
                 payload = await self.receive(reader)
-
                 request = [connection, payload]
 
                 response = await self.callback(request)
@@ -42,7 +36,7 @@ class ServerRequestHandler:
 
  
         except (asyncio.IncompleteReadError, ConnectionResetError):
-            pass
+            raise("Erro na comunicação com o servidor")
         finally:
             writer.close()
             await writer.wait_closed()
@@ -62,12 +56,20 @@ class ServerRequestHandler:
         size = struct.pack("!I", len(payload))
         writer.write(size + payload)
         await writer.drain()
+        
+    async def handle_connection(self, reader, writer):
+        try:
+            while True:
+                payload = await self.receive(reader)
+                await self.callback(payload)
+                
+        except (asyncio.IncompleteReadError, ConnectionResetError):
+            pass
+        finally:
+            writer.close()
+            await writer.wait_closed()
 
-    def recv_exact(self, n):
-        data = b""
-        while len(data) < n:
-            chunk = self.conn.recv(n - len(data))
-            if not chunk:
-                raise ConnectionError("Conexão encerrada")
-            data += chunk
-        return data
+    async def receive(self, reader):
+        size_raw = await reader.readexactly(4)
+        size = struct.unpack("!I", size_raw)[0]
+        return await reader.readexactly(size)

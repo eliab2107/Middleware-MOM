@@ -4,11 +4,6 @@ This script is a starting point to measure round-trip latency and throughput.
 """
 import asyncio
 import time
-from middleware.broker.broker_service import BrokerService
-from middleware.broker.connection import BrokerConnection
-from middleware.client.proxy import Proxy
-from middleware.server.server_handler import ServerHandler
-from app_demo.services import Calculator
 
 
 async def run_roundtrip(n=1000):

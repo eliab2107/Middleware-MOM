@@ -1,65 +1,73 @@
+import asyncio
 import socket
 import struct
-import asyncio
-
+from typing import Tuple
+from typing import Callable
 class ClientRequestHandler:
-    def __init__(self, host="localhost", port=5000):
+    """
+    Client Request Handler
+    - Abre conexão com o broker
+    - Envia mensagens
+    - Espera ACK quando necessário
+    """
+
+    def __init__(self, host: str = "localhost", port: int=5001, func:Callable = None):
         self.host = host
         self.port = port
+        self.reader: asyncio.StreamReader | None = None
+        self.writer: asyncio.StreamWriter | None = None
+        self.callback = func
+       
 
-    def connect(self, host=None, port=None):
-        if host:
-            self.host = host
-        if port:
-            self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
-
-    def close(self):
-        if self.sock:
-            self.sock.close()
-            self.sock = None
-
-    def send_receive(self, message: bytes) -> bytes:
-        """
-        Usa conexão persistente já aberta.
-        """
-        if not self.sock:
-            raise RuntimeError("Conexão não aberta. Use .connect()")
-
-        # ---- Envia ----
-        size = struct.pack("!I", len(message))
-        print(f"Enviando mensagem de tamanho {len(size)} bytes...")
-        self.sock.sendall(size + message)
-
-        # ---- Recebe ----
-        resp_size_raw = self._recv_exact(4)
-        resp_size = struct.unpack("!I", resp_size_raw)[0]
-
-        response = self._recv_exact(resp_size)
-        return response
-
-    def _recv_exact(self, n):
-        data = b""
-        while len(data) < n:
-            chunk = self.sock.recv(n - len(data))
-            if not chunk:
-                raise ConnectionError("Conexão encerrada pelo servidor")
-            data += chunk
-        return data
-
+    async def connect(self):
+        self.reader, self.writer = await asyncio.open_connection( self.host,  self.port )
     
-    async def send_receive_to_subscribe(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, payload: bytes) -> bytes:        
+    
+    async def send(self, payload: bytes):
+        if not self.writer:
+            raise RuntimeError("Conexão não aberta")
+
         size = struct.pack("!I", len(payload))
-        writer.write(size + payload)
-        await writer.drain()
+        self.writer.write(size + payload)
+        await self.writer.drain()
 
+
+    async def send_and_wait_ack(self, payload: bytes) -> bytes:
+        if not self.reader or not self.writer:
+            raise RuntimeError("Conexão não aberta")
+        
+        await self.send(payload)
+
+        size_raw = await self.reader.readexactly(4)
+        size = struct.unpack("!I", size_raw)[0]
+        return await self.reader.readexactly(size)
+
+
+    async def close(self):
+        if self.writer:
+            self.writer.close()
+            await self.writer.wait_closed()
+
+
+    async def send_to_subscriber(self,address: Tuple[str, int], payload: bytes) -> None:
+        host, port = address
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((host, port))
+
+            size = struct.pack("!I", len(payload))
+            sock.sendall(size + payload)
+        
+        
+    async def listen(self):
         try:
-            ack_size_raw = await reader.readexactly(4)
-            ack_size = struct.unpack("!I", ack_size_raw)[0]
+            while True:
+                size_raw = await self.reader.readexactly(4)
+                size = struct.unpack("!I", size_raw)[0]
+                payload = await self.reader.readexactly(size)
 
-            ack_payload = await reader.readexactly(ack_size)
-            return ack_payload
+                if self.callback:
+                    await self.callback(payload)
 
-        except asyncio.IncompleteReadError:
-            raise ConnectionError("Conexão encerrada antes do ACK")
+        except (asyncio.IncompleteReadError, ConnectionResetError):
+            print("Conexão encerrada pelo broker")

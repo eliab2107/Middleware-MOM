@@ -2,20 +2,20 @@ from middleware.network.client_request_handler import ClientRequestHandler
 from middleware.utils.marshaller import Marshaller
 
 class Requestor:
-    def __init__(self):
+    def __init__(self, server_host, server_port, callback):
         self.marshaller = Marshaller()
-  
-    def connect(self, host: str, port: int):
-        self.crh = ClientRequestHandler(host, port)
-        self.crh.connect()
+        self.crh = ClientRequestHandler(server_host, server_port, callback)
         
-    def handler(self, envelope):
+        
+    async def connect(self):
+        await self.crh.connect()
+        
+    
+    async def handler(self, envelope):
         raw = self.marshaller.marshal(envelope)
-        response_raw = self.crh.send_receive(raw)
-
+        response_raw = await self.crh.send_and_wait_ack(raw)
         return self.marshaller.unmarshal(response_raw)
-
-
+        
     def publish(self, topic, message):
         envelope = {
             "service": "notification_engine",
@@ -31,11 +31,12 @@ class Requestor:
         return self.handler(envelope)
     
     
-    def subscribe(self, queue):
+    def subscribe(self, queue, my_host, my_port):
         envelope = {
             "service": "notification_engine",
             "method": "subscribe",
-            "topic": queue
+            "topic": queue,
+            "args": [queue, my_host, my_port]
         }
 
         return self.handler(envelope)

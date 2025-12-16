@@ -28,7 +28,6 @@ class QueueManager:
         """Add a new message in the queue"""
         await self.ensure(name)
         async with self.locks[name]:
-            print(message)
             self.queues[name].append(message)
     
 

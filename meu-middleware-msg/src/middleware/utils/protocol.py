@@ -1,5 +1,5 @@
 """Message protocol definitions (simple JSON-serializable messages)."""
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 import time
 import uuid
@@ -7,7 +7,7 @@ import uuid
 @dataclass
 class Message:
     def __init__(self, data: Dict[str, Any] = None):
-        self.msg_id = field(default_factory=lambda: str(uuid.uuid4()))
+        self.msg_id = str(uuid.uuid4())
         self.topic: str = data.get("topic") if data else ""
         self.type: str = data.get("type", "publication") if data else "publication"
         self.method: str = data.get("method", "publish") if data else "publish"
@@ -22,12 +22,26 @@ class Message:
         self.sended: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
-        d = asdict(self)
-        return d
+        return {
+            "msg_id": self.msg_id,
+            "topic": self.topic,
+            "type": self.type,
+            "method": self.method,
+            "service": self.service,
+            "args": list(self.args),
+            "kwargs": dict(self.kwargs),
+            "reply_to": self.reply_to,
+            "correlation_id": self.correlation_id,
+            "ttl_ms": int(self.ttl_ms),
+            "created_at": float(self.created_at),
+            "expires_at": self.expires_at,
+            "payload": self.payload,
+            "sended": bool(self.sended),
+        }
 
     @property
     def expires_at(self) -> Optional[float]:
-        if self.ttl_ms != 0:
+        if self.ttl_ms == 0:
             return None
         return self.created_at + (self.ttl_ms / 1000.0)
 

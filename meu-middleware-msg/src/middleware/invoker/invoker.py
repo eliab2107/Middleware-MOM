@@ -26,13 +26,12 @@ class Invoker:
         """
         Executa o método solicitado pelo payload. 
         """
-        connection = args[0]
         envelope = args[1]
         envelope_unmarshaller = self.marshaller.unmarshal(envelope)
         message = Message(envelope_unmarshaller)
         service_name = message.service
         method_name = message.method
-        message.args.append(connection) 
+       
         
         if not service_name or not method_name:
             return self.marshaller.marshal({"status": 400, "error": "Payload inválido: 'service' e 'method' são obrigatórios.", "ack": False})
@@ -72,7 +71,6 @@ class Invoker:
                 message = self.marshaller.unmarshal(raw_message)
                
                 result = self.invoke(message)
-                print("Result:", result)
                 response = self.marshaller.marshal(result)
                 self.srh.send(response)
 
@@ -80,37 +78,9 @@ class Invoker:
                 print("Cliente desconectou.")
                 break
             
-        
-    def process_message(self, msg: dict) -> dict:
-        operation = msg["method"]
-        if operation == "publish":
-            topic = msg["topic"]
-            payload = msg["payload"]
-            self.notification_engine.publish(topic, payload)
-            return {"status": "ack"}
-
-        elif operation == "subscribe":
-            queue = msg["queue"]
-            self.notification_engine.subscribe(queue)
-            return {"status": "ack"}
-
-        elif operation == "unsubscribe":
-            queue = msg["queue"]
-            self.notification_engine.unsubscribe(queue)
-            return {"status": "ack"}
-
-        elif operation == "create_queue":
-            queue = msg["queue"]
-            self.notification_engine.create_queue(queue)
-            return {"status": "ack"}
-
-        elif operation == "close_connection":
-            self.srh.close()
-            return {"status": "ack"}
-        
     
-    async def send_to_subscriber(self, connection, message):
-        print(message)
-        message_unmarshaller = self.marshaller.marshall(message)
-        await self.crh.send_receive_to_subscribe(connection[0], connection[1], message_unmarshaller)
+    async def send_to_subscriber(self, connection, message:Message):
+        message_dict = message.to_dict()
+        message_unmarshaller = self.marshaller.marshal(message_dict)
+        await self.crh.send_to_subscriber(connection, message_unmarshaller)
         

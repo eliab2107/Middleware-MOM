@@ -30,7 +30,6 @@ class Message:
             type=data.get("type", "request"),
             method=data.get("method", ""),
             args=data.get("args", []),
-            kwargs=data.get("kwargs", {}),
             reply_to=data.get("reply_to"),
             correlation_id=data.get("correlation_id"),
             ttl_ms=int(data.get("ttl_ms", 0) or 0),

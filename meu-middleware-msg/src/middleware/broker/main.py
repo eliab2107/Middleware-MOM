@@ -15,7 +15,6 @@ async def main():
     client_request_handler = ClientRequestHandler()
     queue_manager = QueueManager()
 
-
     invoker = Invoker(
         marshaller,
         server_request_handler,
@@ -38,7 +37,7 @@ async def main():
     print("Broker iniciado na porta 5001")
     asyncio.create_task(notification_engine.start_consumer())
 
-    await srh.start()
+    await srh.start(srh.handle)
     
 
 if __name__ == "__main__":

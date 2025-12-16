@@ -17,12 +17,10 @@ class NotificationEngine:
         await self.storage.enqueue(topic, message)   
      
     async def subscribe(self, args) -> None:
-        print("AAAAAAAAAAARGS: ", args)
         topic = args[0]
-        connection = args[len(args)-1] 
-
+        connection = (args[1], args[2])
+        
         if topic not in self.storage.get_queues() :
-            print()
             await self.storage.ensure(topic)
         await self.sub_manager.add_subscriber(topic, connection)
     
@@ -34,8 +32,6 @@ class NotificationEngine:
     async def start_consumer(self) -> None:
         while True:
             queues = list(self.storage.queues.keys())
-            print("filas: ", self.storage.queues)
-            print("subs: ",  self.sub_manager.subscribers)
             for queue in queues:
                 if len(self.sub_manager.get_subscribers(queue)) > 0:
                     message = await self.storage.dequeue(queue)
@@ -43,7 +39,7 @@ class NotificationEngine:
                     if message is not None:
                         await self.consumer.notify(queue, message)
 
-            await asyncio.sleep(3) 
+            await asyncio.sleep(0.00001) 
                 
 
        
