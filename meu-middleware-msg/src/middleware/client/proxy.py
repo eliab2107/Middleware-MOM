@@ -19,7 +19,7 @@ class ClientProxy:
             raise ValueError("Precisa informar um tópico para poder publicar.")
         message = {"topic": topic, "payload": payload, "reply_to": reply_to, "ttl_ms": ttl_ms, "type": type, "args": args}
         resp = await self.requestor.publish(topic, message)
-        print(f"Publish response: {resp}")
+        #print(f"Publish response: {resp}")
 
     def subscribe(self, queue: str, my_host, my_port):
         return self.requestor.subscribe(queue, my_host, my_port)

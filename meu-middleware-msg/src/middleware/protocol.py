@@ -32,7 +32,7 @@ class Message:
             args=data.get("args", []),
             reply_to=data.get("reply_to"),
             correlation_id=data.get("correlation_id"),
-            ttl_ms=int(data.get("ttl_ms", 0) or 0),
+            ttl_ms=int(data.get("ttl_ms", 0) or 100),
             created_at=float(data.get("created_at", time.time())),
             payload=data.get("payload"),
         )

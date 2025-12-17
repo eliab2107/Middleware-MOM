@@ -9,8 +9,10 @@ async def main():
     publisher = Publisher("localhost", 5001)
     await publisher.connect()
     i = 0
+
     while True:
-        await publisher.publish("news", f"Hello subscribers{i}")
+        message = {"id": i, "data": "Hello", "sent_at": time.time()}
+        await publisher.publish("news", message)
         i+=1
         time.sleep(0.5)
         

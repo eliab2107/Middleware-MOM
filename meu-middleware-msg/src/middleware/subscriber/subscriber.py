@@ -35,4 +35,7 @@ class Subscriber:
     async def start(self,):
        self.server_task = asyncio.create_task(self.start_listen())
        await self.server_task
+       
+    def death(self):
+        self.srh
     
